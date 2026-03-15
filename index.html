@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VisionBoard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,500;0,700;1,300;1,500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ── SPLASH ── -->
+<div id="splash" class="splash">
+  <div class="splash-bg">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+    <div class="grid-lines"></div>
+  </div>
+  <div class="splash-inner">
+    <div class="splash-badge" data-i18n="splash_badge">✦ Planejamento Intencional</div>
+    <h1 class="splash-title">Vision<br/><em>Board</em></h1>
+    <p class="splash-sub" data-i18n="splash_sub">Manifeste seus objetivos, trimestre a trimestre.</p>
+    <button class="btn-primary splash-btn" onclick="App.startSession()">
+      <span data-i18n="splash_btn">Criar meu board</span> <span>→</span>
+    </button>
+    <p class="splash-note" data-i18n="splash_note">Tudo salvo no seu navegador. Privado e seu.</p>
+    <div class="splash-lang" id="splashLang">
+      <button class="splash-lang-btn active" data-code="pt-BR" onclick="I18n.setLang('pt-BR');syncSplashLang()">🇧🇷 PT</button>
+      <span class="splash-lang-sep">·</span>
+      <button class="splash-lang-btn" data-code="en" onclick="I18n.setLang('en');syncSplashLang()">🇺🇸 EN</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── APP ── -->
+<div id="app" class="app hidden">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-mark">VB</span>
+      <span class="logo-text">VisionBoard</span>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label" data-i18n="sidebar_period">Período</div>
+      <div class="year-nav">
+        <button onclick="App.changeYear(-1)" class="nav-btn">‹</button>
+        <span id="currentYear" class="year-display">2025</span>
+        <button onclick="App.changeYear(1)" class="nav-btn">›</button>
+      </div>
+      <div class="quarter-tabs" id="quarterTabs">
+        <button class="q-tab active" data-q="1" onclick="App.setQuarter(1)">
+          <span class="q-label">Q1</span><span class="q-months" data-i18n="q1_months">Jan–Mar</span>
+        </button>
+        <button class="q-tab" data-q="2" onclick="App.setQuarter(2)">
+          <span class="q-label">Q2</span><span class="q-months" data-i18n="q2_months">Abr–Jun</span>
+        </button>
+        <button class="q-tab" data-q="3" onclick="App.setQuarter(3)">
+          <span class="q-label">Q3</span><span class="q-months" data-i18n="q3_months">Jul–Set</span>
+        </button>
+        <button class="q-tab" data-q="4" onclick="App.setQuarter(4)">
+          <span class="q-label">Q4</span><span class="q-months" data-i18n="q4_months">Out–Dez</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="sidebar-section grow">
+      <div class="sidebar-label" data-i18n="sidebar_history">Histórico</div>
+      <div id="historyList" class="history-list"></div>
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="btn-ghost small" onclick="App.exportData()" data-i18n="sidebar_export">⬇ Exportar JSON</button>
+      <label class="btn-ghost small">
+        <span data-i18n="sidebar_import">⬆ Importar</span>
+        <input type="file" accept=".json" onchange="App.importData(event)" style="display:none" />
+      </label>
+    </div>
+  </aside>
+
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="App.closeSidebar()"></div>
+
+  <main class="main">
+    <header class="top-bar">
+      <button class="menu-toggle" onclick="App.toggleSidebar()">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="top-bar-title">
+        <h2 id="boardTitle">Q1 · 2025</h2>
+        <span id="boardSubtitle" class="board-subtitle">Janeiro — Março</span>
+      </div>
+      <div class="top-bar-actions">
+        <button class="btn-icon" onclick="I18n.openModal()" data-i18n-title="topbar_lang" title="Idioma">🌐</button>
+        <button class="btn-icon" onclick="Theme.openModal()" data-i18n-title="topbar_theme" title="Tema">🎨</button>
+        <button class="btn-icon" onclick="App.clearBoard()" data-i18n-title="topbar_clear" title="Limpar board">🗑</button>
+        <button class="btn-primary small" onclick="App.saveBoard()">
+          <span id="saveBtnText" data-i18n="topbar_save">Salvar</span>
+        </button>
+      </div>
+    </header>
+
+    <section class="intention-bar">
+      <span class="intention-prefix">✦</span>
+      <input
+        id="intentionInput"
+        type="text"
+        data-i18n-ph="intention_placeholder"
+        placeholder="Intenção do trimestre: escreva sua palavra ou frase guia…"
+        maxlength="120"
+        oninput="App.markDirty()"
+      />
+    </section>
+
+    <div class="board-grid" id="boardGrid"></div>
+
+    <div class="add-area">
+      <button class="btn-add" onclick="App.addCard()">
+        <span class="btn-add-icon">+</span>
+        <span data-i18n="add_card">Adicionar cartão</span>
+      </button>
+    </div>
+  </main>
+</div>
+
+<!-- CARD MODAL -->
+<div id="cardModal" class="modal-overlay hidden" onclick="App.closeModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="App.closeModal()">×</button>
+    <h3 class="modal-title" data-i18n="modal_edit_title">Editar cartão</h3>
+
+    <label class="field-label" data-i18n="modal_category">Categoria</label>
+    <div class="category-pills" id="categoryPills"></div>
+
+    <label class="field-label" data-i18n="modal_card_title">Título</label>
+    <input id="cardTitle" type="text" class="field-input" data-i18n-ph="modal_title_ph" placeholder="Ex: Viajar para Portugal" maxlength="60" />
+
+    <label class="field-label" data-i18n="modal_desc">Descrição / afirmação</label>
+    <textarea id="cardDesc" class="field-input field-area" rows="3" maxlength="300" data-i18n-ph="modal_desc_ph" placeholder="Como você vai se sentir quando realizar isso?"></textarea>
+
+    <label class="field-label" data-i18n="modal_image">Imagem</label>
+    <div class="image-row">
+      <input id="cardImgUrl" type="text" class="field-input" data-i18n-ph="modal_img_ph" placeholder="Cole uma URL de imagem…" oninput="App.previewImg()" />
+      <span class="or-divider" data-i18n="modal_or">ou</span>
+      <label class="btn-ghost small upload-btn">
+        <span data-i18n="modal_upload">📁 Upload</span>
+        <input type="file" accept="image/*" onchange="App.handleImgUpload(event)" style="display:none" />
+      </label>
+    </div>
+    <div id="imgPreview" class="img-preview hidden"></div>
+
+    <label class="field-label" data-i18n="modal_emoji">Emoji</label>
+    <div class="emoji-grid" id="emojiGrid"></div>
+
+    <label class="field-label" data-i18n="modal_color">Cor</label>
+    <div class="color-swatches" id="colorSwatches"></div>
+
+    <label class="field-label">
+      <span data-i18n="modal_progress">Progresso</span> — <span id="progressDisplay">0%</span>
+    </label>
+    <input id="cardProgress" type="range" min="0" max="100" value="0" class="progress-slider" oninput="App.updateProgressDisplay()" />
+
+    <div class="modal-footer">
+      <button class="btn-ghost danger" onclick="App.deleteCard()" data-i18n="modal_delete">Excluir</button>
+      <button class="btn-primary" onclick="App.saveCard()" data-i18n="modal_save">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- THEME MODAL -->
+<div id="themeModal" class="modal-overlay hidden" onclick="Theme.closeModal(event)">
+  <div class="modal-box theme-modal-box" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="Theme.closeModal()">×</button>
+    <h3 class="modal-title" data-i18n="theme_title">🎨 Tema</h3>
+
+    <label class="field-label" data-i18n="theme_mode">Modo</label>
+    <div class="theme-mode-toggle" id="themeModeToggle">
+      <button class="mode-btn active" data-mode="light" data-i18n="theme_light">☀️ Claro</button>
+      <button class="mode-btn" data-mode="dark" data-i18n="theme_dark">🌙 Escuro</button>
+    </div>
+
+    <label class="field-label" style="margin-top:1.2rem" data-i18n="theme_palette">Paleta</label>
+    <div class="theme-presets" id="themePresets"></div>
+
+    <div class="theme-preview" id="themePreview">
+      <div class="preview-card">
+        <div class="preview-bar"></div>
+        <div class="preview-body">
+          <span class="preview-cat" data-i18n="theme_preview_cat">🎯 Meta</span>
+          <p class="preview-title" data-i18n="theme_preview_title">Minha visão</p>
+          <p class="preview-desc" data-i18n="theme_preview_desc">Uma frase de inspiração para o trimestre.</p>
+        </div>
+        <div class="preview-footer">
+          <div class="preview-track"><div class="preview-fill"></div></div>
+          <span class="preview-pct">60%</span>
+        </div>
+      </div>
+      <div class="preview-card preview-card-2">
+        <div class="preview-bar"></div>
+        <div class="preview-body">
+          <span class="preview-cat" data-i18n="theme_preview_cat2">✨ Pessoal</span>
+          <p class="preview-title" data-i18n="theme_preview_title2">Crescimento</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer" style="margin-top:1.2rem">
+      <button class="btn-ghost" onclick="Theme.closeModal()" data-i18n="theme_cancel">Cancelar</button>
+      <button class="btn-primary" onclick="Theme.applyAndClose()" data-i18n="theme_apply">Aplicar tema</button>
+    </div>
+  </div>
+</div>
+
+<!-- LANGUAGE MODAL -->
+<div id="langModal" class="modal-overlay hidden" onclick="I18n.closeModal(event)">
+  <div class="modal-box lang-modal-box" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="I18n.closeModal()">×</button>
+    <h3 class="modal-title" data-i18n="lang_title">🌐 Idioma</h3>
+    <div class="lang-list" id="langList"></div>
+    <div class="modal-footer" style="margin-top:1.2rem">
+      <button class="btn-ghost" onclick="I18n.closeModal()" data-i18n="lang_cancel">Cancelar</button>
+      <button class="btn-primary" onclick="I18n.applyAndClose()" data-i18n="lang_apply">Aplicar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="i18n.js"></script>
+<script src="app.js"></script>
+<script src="theme.js"></script>
+<script>
+  function syncSplashLang() {
+    const lang = I18n.getLang();
+    document.querySelectorAll('.splash-lang-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.code === lang);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', syncSplashLang);
+</script>
+</body>
+</html>
